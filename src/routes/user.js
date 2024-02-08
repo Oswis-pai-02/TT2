@@ -64,10 +64,10 @@ router.get('/users/getPassword/:correo', (req, res) => {
                 res.json({ id: user._id, contrasenia: user.contrasenia });
             } else {
                 // Manejar el caso en que no se encuentre el usuario
-                res.status(404).json({ message: 'Usuario no encontrado' });
+                res.json({ message: 'Usuario no encontrado' });
             }
         })
-        .catch((error) => res.status(500).json({ message: error.message }));
+        .catch((error) => res.json({ message: error.message }));
 });
 
 module.exports = router;
