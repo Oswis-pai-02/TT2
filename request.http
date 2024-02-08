@@ -3,10 +3,13 @@ POST http://localhost:9000/api/users HTTP/1.1
 Content-Type: application/json
 
 {
-    "name": "Yoltzin Dominguez Chimal",
-    "age": 17,
-    "email": "yoltzin.dominguez@hotmail.com"
-} 
+    "rol": "Usuario",
+    "nombreCompleto": "Yoltzin Dominguez Chimal",
+    "correo": "yoltzin.dominguez@hotmail.com",
+    "contrasenia": "contrasenaSegura123",
+    "fechaDeNacimiento": "2007-01-01",
+    "genero": "Femenino"
+}
 
 ###
 GET http://localhost:9000/api/users HTTP/1.1
