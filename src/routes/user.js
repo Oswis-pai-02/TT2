@@ -10,7 +10,7 @@ router.post("/users", (req, res) => {
         .save()
         .then((savedUser) => res.json({ 
             message: "Usuario registrado correctamente",
-            userId: savedUser._id // Devuelve el ID del usuario creado
+            id: savedUser._id // Devuelve el ID del usuario creado
         }))
         .catch((error) => res.json({ message: error.message }));
 });
