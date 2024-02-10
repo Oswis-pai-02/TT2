@@ -4,6 +4,7 @@ require("dotenv").config();
 const userRoutes = require("./routes/user");
 const reportRoutes = require('./routes/report'); 
 const cors = require("cors");
+const reportRoutes = require('./routes/report'); // Asegúrate de que la ruta sea correcta
 
 const app = express();
 const port = process.env.PORT || 9000;
