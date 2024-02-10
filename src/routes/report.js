@@ -21,8 +21,8 @@ router.post('/report', upload.single('imagen'), (req, res) => {
     });
 
     newReport.save()
-        .then(report => res.status(201).json(report))
-        .catch(err => res.status(500).json({ error: err.message }));
+        .then(report => res.json("Reporte creado de forma exitosa"))
+        .catch(err => res.json({ error: err.message }));
 });
 
 module.exports = router;
