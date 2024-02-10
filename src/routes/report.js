@@ -8,6 +8,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 router.post('/report', upload.single('imagen'), (req, res) => {
+
     if (!req.file) {
         return res.status(400).send('No se encontró archivo de imagen.');
     }

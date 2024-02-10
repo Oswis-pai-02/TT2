@@ -2,8 +2,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 require("dotenv").config();
 const userRoutes = require("./routes/user");
+const reportRoutes = require('./routes/report'); 
 const cors = require("cors");
-const reportRoutes = require('./routes/reports'); // Asegúrate de que la ruta sea correcta
 
 const app = express();
 const port = process.env.PORT || 9000;
@@ -18,6 +18,7 @@ app.use(cors(corsOptions)); // Usa el middleware cors con tus opciones
 //middleware
 app.use(express.json());
 app.use('/api', userRoutes);
+app.use('/api', reportRoutes);
 
 // routes
 app.get("/", (req, res) => {
