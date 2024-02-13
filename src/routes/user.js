@@ -5,22 +5,36 @@ const router = express.Router();
 
 // create user
 router.post("/users", (req, res) => {
-    const user = userSchema(req.body);
-    user
-        .save()
-        .then((savedUser) => res.json({ 
-            message: "Usuario registrado correctamente",
-            id: savedUser._id // Devuelve el ID del usuario creado
-        }))
+    // Buscar si ya existe un usuario con el mismo correo electrónico
+    userSchema.findOne({ correo: req.body.correo })
+        .then((existingUser) => {
+            console.log(existingUser);
+            if (existingUser) {
+                // Si el usuario ya existe, enviar un mensaje de error
+                return res.json({
+                    message: "El correo electrónico ya está registrado. Por favor, use uno diferente."
+                });
+            }
+
+            // Si el usuario no existe, crear uno nuevo
+            const user = new userSchema(req.body);
+            user.save()
+                .then((savedUser) => res.json({
+                    message: "Usuario registrado correctamente",
+                    id: savedUser._id // Devuelve el ID del usuario creado
+                }))
+                .catch((error) => res.json({ message: error.message }));
+        })
         .catch((error) => res.json({ message: error.message }));
 });
 
-//get all users
+//get users
 router.get("/users", (req, res) => {
     userSchema
         .find()
-        .then((data)=> res.json(data))
-        .catch((error) => res.json({message: error}));
+        .select("_id nombreCompleto correo") 
+        .then((data) => res.json(data))
+        .catch((error) => res.json({ message: error }));
 });
 
 //get a user
@@ -28,6 +42,7 @@ router.get("/users/:id", (req, res) => {
     const { id } = req.params;
     userSchema
         .findById(id)
+        .select("correo fechaDeNacimiento genero nombreCompleto") 
         .then((data)=> res.json(data))
         .catch((error) => res.json({message: error}));
 });
@@ -47,7 +62,7 @@ router.delete("/users/:id", (req, res) => {
     const { id } = req.params;
     userSchema
         .findByIdAndDelete(id)
-        .then((data)=> res.json(data))
+        .then((data)=> res.json("Usuario eliminado de forma correcta"))
         .catch((error) => res.json({message: error}));
 });
 
