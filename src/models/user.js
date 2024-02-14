@@ -24,6 +24,10 @@ const userSchema = mongoose.Schema({
     genero: {
         type: String,
         required: true
+    },
+    imagenPerfil: {
+        type: Buffer,
+        required: false 
     }
 });
 
