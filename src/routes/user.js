@@ -1,7 +1,11 @@
 const express = require("express");
+const router = express.Router();
+const multer = require('multer'); // Multer se usa para manejar form-data, particularmente para la carga de archivos
 const userSchema = require("../models/user");
 
-const router = express.Router();
+// Configuración de Multer para manejar la carga de archivos
+const storage = multer.memoryStorage(); // Guarda los archivos en la memoria como Buffer
+const upload = multer({ storage: storage });
 
 // create user
 router.post("/users", (req, res) => {
@@ -43,8 +47,22 @@ router.get("/users/:id", (req, res) => {
     const { id } = req.params;
     userSchema
         .findById(id)
-        .select("correo fechaDeNacimiento genero nombreCompleto") 
-        .then((data)=> res.json(data))
+        .select("correo fechaDeNacimiento genero nombreCompleto imagenPerfil") 
+        .then((data)=> {
+            // Si la imagen de perfil es un Buffer, se a un formato adecuado antes de enviarlo
+            // Si es un Buffer de una imagen, se convierte a Base64
+            // Si es una URL o un path, se envia directamente
+
+            // Si el campo imagenPerfil es un Buffer
+            if (data.imagenPerfil instanceof Buffer) {
+                // Convierte el Buffer a Base64
+                const imagenBase64 = data.imagenPerfil.toString('base64');
+                // Agrega el prefijo adecuado para que se pueda mostrar como imagen en el frontend
+                data.imagenPerfil = `data:image/jpeg;base64,${imagenBase64}`;
+            }
+
+            res.json(data);
+        })
         .catch((error) => res.json({message: error}));
 });
 
@@ -63,6 +81,30 @@ router.put("/users/:id", (req, res) => {
                 res.json({ message: "Información actualizada de forma correcta" });
             } else {
                 res.json({ message: "No se encontró el usuario o la información es la misma" });
+            }
+        })
+        .catch(error => res.json({ message: error }));
+});
+
+//update profile image
+router.put("/users/:id/profile-image", upload.single('imagenPerfil'), (req, res) => {
+    const { id } = req.params;
+
+    if (!req.file) {
+        return res.status(400).json({ message: "No se envió ninguna imagen" });
+    }
+
+    const imagenPerfil = req.file.buffer; // Accede al Buffer de la imagen cargada
+
+    // Actualiza en la base de datos el campo imagenPerfil
+    userSchema
+        .updateOne({ _id: id }, { $set: { imagenPerfil } })
+        .then(data => {
+            // Verifica si se actualizó algún documento
+            if (data.modifiedCount > 0) {
+                res.json("Imagen de perfil actualizada de forma correcta" );
+            } else {
+                res.json("No se encontró el usuario o la imagen de perfil es la misma" );
             }
         })
         .catch(error => res.json({ message: error }));
