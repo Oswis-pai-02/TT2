@@ -37,8 +37,17 @@ router.post("/users", (req, res) => {
 router.get("/users", (req, res) => {
     userSchema
         .find()
-        .select("_id nombreCompleto correo") 
-        .then((data) => res.json(data))
+        .select("correo nombreCompleto imagenPerfil")
+        .then((data) => {
+            // Para cada usuario, si la imagen de perfil es un Buffer, se convierte a Base64
+            data.forEach(user => {
+                if (user.imagenPerfil instanceof Buffer) {
+                    const imagenBase64 = user.imagenPerfil.toString('base64');
+                    user.imagenPerfil = `data:image/jpeg;base64,${imagenBase64}`;
+                }
+            });
+            res.json(data);
+        })
         .catch((error) => res.json({ message: error }));
 });
 
