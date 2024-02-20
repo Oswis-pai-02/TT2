@@ -73,4 +73,15 @@ router.post('/reportes/:reportId/like', async (req, res) => {
     }
   });  
 
+  //Ruta para traer la lista de todos los reportes
+  router.get('/reportes', async (req, res) => {
+    try {
+      const reports = await Report.find({}); // Encuentra todos los reportes
+      res.status(200).json(reports);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+
 module.exports = router;
