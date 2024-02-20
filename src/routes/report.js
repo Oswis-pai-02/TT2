@@ -49,4 +49,28 @@ router.post('/reportes/:reportId/like', async (req, res) => {
     }
   });
 
+  //Ruta para agregar un dislike a un reporte
+  router.post('/reportes/:reportId/dislike', async (req, res) => {
+    const reportId = req.params.reportId;
+    const userId = req.body.userId; // ID del usuario que da dislike
+  
+    try {
+      const report = await Report.findById(reportId);
+  
+      if (!report.listaDeUsuariosQueDieronDislike.includes(userId)) {
+        // Agregar el ID del usuario a la lista de dislikes y aumentar el contador
+        report.listaDeUsuariosQueDieronDislike.push(userId);
+        report.dislikes += 1;
+        await report.save();
+        
+        res.status(200).json({ message: "Dislike agregado correctamente." });
+      } else {
+        // El usuario ya dio dislike, no hacer nada
+        res.status(200).json({ message: "El usuario ya dio dislike a este reporte." });
+      }
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });  
+
 module.exports = router;
