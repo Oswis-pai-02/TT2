@@ -102,5 +102,55 @@ router.post('/reportes/:reportId/like', async (req, res) => {
     }
   });
   
+  //Eliminar reportes con su id
+  router.delete('/reportes/:reportId', async (req, res) => {
+    const reportId = req.params.reportId;
+  
+    try {
+      // Busca y elimina el reporte por su ID
+      const report = await Report.findByIdAndRemove(reportId);
+  
+      if (report) {
+        res.status(200).json({ message: "Reporte eliminado con éxito." });
+      } else {
+        res.status(404).json({ message: "No se encontró el reporte con ese ID." });
+      }
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  //Obtener reportes con diferentes filtros (linea, estacion, direccion, mas votados) segun admin
+  router.get('/reportes', async (req, res) => {
+    // Obtener los parámetros de filtro de la consulta
+    const { linea, estacion, direccion, masVotados } = req.query;
+  
+    // Crear un objeto de filtro basado en los parámetros linea, estacion, direccion, mas votados aqui ya esta la logica 
+    let filtro = {};
+    if (linea) {
+      filtro.linea = linea;
+    }
+    if (estacion) {
+      filtro.estacion = estacion;
+    }
+    if (direccion) {
+      filtro.direccion = direccion;
+    }
+  
+    try {
+      let reports;
+      if (masVotados) {
+        // Obtener los reportes más votados (likes - dislikes) obtenidos del anterior
+        reports = await Report.find(filtro).sort({ 'likes': -1 }); // Ordena por likes en orden descendente 
+      } else {
+        // Obtener los reportes basados en los filtros linea, estacion, direccion, mas votados
+        reports = await Report.find(filtro);
+      }
+      res.status(200).json(reports);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
 
 module.exports = router;
