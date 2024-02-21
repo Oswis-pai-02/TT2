@@ -22,18 +22,14 @@ const reportSchema = new mongoose.Schema({
         default: 0
     },
     id_usuario: {
-        type: String,
-        required: true
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'usuarios'
     },
     fechaHora: {
         type: Date, 
         required: true
     },
     titulo: {
-        type: String,
-        required: true
-    },
-    autor: {
         type: String,
         required: true
     },
