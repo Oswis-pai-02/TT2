@@ -1,37 +1,56 @@
 const express = require('express');
 const multer = require('multer');
 const router = express.Router();
-const Report = require('../models/report'); // Asegúrate de reemplazar esto con tu path correcto
+const reportSchema = require('../models/report');
 
 // Configuración de Multer para manejar la carga de archivos en memoria
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-router.post('/report', upload.single('imagen'), (req, res) => {
+//Ruta para subir un reporte
+router.post('/report', upload.single('imagen'), async (req, res) => {
+    try {
+        let imagenBuffer = null;
+        let contentType = null;
 
-    if (!req.file) {
-        return res.status(400).send('No se encontró archivo de imagen.');
+        // Verificar si se proporcionó una imagen en la solicitud
+        if (req.file) {
+            imagenBuffer = req.file.buffer;
+            contentType = req.file.mimetype;
+        }
+
+        // Calcular la fecha y hora actual
+        const fechaHoraActual = new Date();
+
+        // Crear un nuevo reporte con la información proporcionada en la solicitud
+        const newReport = new reportSchema({
+            descripcion: req.body.descripcion,
+            imagen: imagenBuffer,
+            contentType: contentType,
+            id_usuario: req.body.id_usuario,
+            titulo: req.body.titulo,
+            estacion: req.body.estacion,
+            linea: req.body.linea,
+            direccion: req.body.direccion,
+            fechaHora: fechaHoraActual
+        });
+
+        // Guardar el nuevo reporte en la base de datos
+        await newReport.save();
+
+        res.json("Reporte creado de forma exitosa");
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
-
-    // Crear un nuevo reporte con la imagen recibida
-    const newReport = new Report({
-        descripcion: req.body.descripcion,
-        imagen: req.file.buffer,  // Imagen como Buffer
-        contentType: req.file.mimetype  // Tipo MIME de la imagen
-    });
-
-    newReport.save()
-        .then(report => res.json("Reporte creado de forma exitosa"))
-        .catch(err => res.json({ error: err.message }));
 });
 
 // Ruta para agregar un like a un reporte
-router.post('/reportes/:reportId/like', async (req, res) => {
+router.post('/report/:reportId/like', async (req, res) => {
     const reportId = req.params.reportId;
     const userId = req.body.userId; // ID del usuario que da like
   
     try {
-      const report = await Report.findById(reportId);
+      const report = await reportSchema.findById(reportId);
   
       if (!report.listaDeUsuariosQueDieronLike.includes(userId)) {
         // Agregar el ID del usuario a la lista de likes y aumentar el contador
@@ -39,10 +58,10 @@ router.post('/reportes/:reportId/like', async (req, res) => {
         report.likes += 1;
         await report.save();
         
-        res.status(200).json({ message: "Like agregado correctamente." });
+        res.status(200).json("Like agregado correctamente." );
       } else {
         // El usuario ya dio like, no hacer nada
-        res.status(200).json({ message: "El usuario ya dio like a este reporte." });
+        res.status(200).json("El usuario ya dio like a este reporte.");
       }
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -50,12 +69,12 @@ router.post('/reportes/:reportId/like', async (req, res) => {
   });
 
   //Ruta para agregar un dislike a un reporte
-  router.post('/reportes/:reportId/dislike', async (req, res) => {
+  router.post('/report/:reportId/dislike', async (req, res) => {
     const reportId = req.params.reportId;
     const userId = req.body.userId; // ID del usuario que da dislike
   
     try {
-      const report = await Report.findById(reportId);
+      const report = await reportSchema.findById(reportId);
   
       if (!report.listaDeUsuariosQueDieronDislike.includes(userId)) {
         // Agregar el ID del usuario a la lista de dislikes y aumentar el contador
@@ -63,24 +82,46 @@ router.post('/reportes/:reportId/like', async (req, res) => {
         report.dislikes += 1;
         await report.save();
         
-        res.status(200).json({ message: "Dislike agregado correctamente." });
+        res.status(200).json("Dislike agregado correctamente.");
       } else {
         // El usuario ya dio dislike, no hacer nada
-        res.status(200).json({ message: "El usuario ya dio dislike a este reporte." });
+        res.status(200).json("El usuario ya dio dislike a este reporte.");
       }
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   });  
 
-  //Ruta para traer la lista de todos los reportes
-  router.get('/reportes', async (req, res) => {
-    try {
-      const reports = await Report.find({}); // Encuentra todos los reportes
-      res.status(200).json(reports);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
+  //Ruta para obtener todos los reportes
+  router.get("/report", (req, res) => {
+    reportSchema
+      .find()
+      .select("_id fechaHora linea estacion direccion id_usuario titulo descripcion imagen likes dislikes")
+      .populate('id_usuario', 'nombreCompleto imagenPerfil') // Usar 'id_usuario' para la población
+      .then((data) => {
+        const reportesTransformados = data.map(reporte => {
+          let imagenBase64 = reporte.imagen ? `data:image/jpeg;base64,${reporte.imagen.toString('base64')}` : null;
+          let imagenPerfilBase64 = reporte.id_usuario.imagenPerfil ? `data:image/jpeg;base64,${reporte.id_usuario.imagenPerfil.toString('base64')}` : null;
+  
+          return {
+            id: reporte._id,
+            fechaHora: reporte.fechaHora,
+            linea: reporte.linea,
+            estacion: reporte.estacion,
+            direccion: reporte.direccion,
+            autor: reporte.id_usuario.nombreCompleto, // Usando id_usuario para obtener el nombre completo del autor
+            titulo: reporte.titulo,
+            descripcion: reporte.descripcion,
+            imagen: imagenBase64,
+            imagenPerfil: imagenPerfilBase64, // Incluir la imagen de perfil del autor
+            likes: reporte.likes,
+            dislikes: reporte.dislikes
+          };
+        });
+  
+        res.json(reportesTransformados);
+      })
+      .catch((error) => res.json({ message: error }));
   });
   
   //Eliminar reportes con su id

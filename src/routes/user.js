@@ -39,14 +39,18 @@ router.get("/users", (req, res) => {
         .find()
         .select("correo nombreCompleto imagenPerfil")
         .then((data) => {
-            // Para cada usuario, si la imagen de perfil es un Buffer, se convierte a Base64
-            data.forEach(user => {
-                if (user.imagenPerfil instanceof Buffer) {
-                    const imagenBase64 = user.imagenPerfil.toString('base64');
-                    user.imagenPerfil = `data:image/jpeg;base64,${imagenBase64}`;
-                }
+            const usuariosTransformados = data.map(usuario => {
+                // Convertir imagenPerfil de Buffer a Base64 si existe
+                let imagenPerfilBase64 = usuario.imagenPerfil ? `data:image/jpeg;base64,${usuario.imagenPerfil.toString('base64')}` : null;
+
+                return {
+                    correo: usuario.correo,
+                    nombreCompleto: usuario.nombreCompleto,
+                    imagenPerfil: imagenPerfilBase64 // Usar la imagen convertida o null si no existe
+                };
             });
-            res.json(data);
+
+            res.json(usuariosTransformados); // Enviar los usuarios transformados
         })
         .catch((error) => res.json({ message: error }));
 });
@@ -56,23 +60,32 @@ router.get("/users/:id", (req, res) => {
     const { id } = req.params;
     userSchema
         .findById(id)
-        .select("correo fechaDeNacimiento genero nombreCompleto imagenPerfil") 
-        .then((data)=> {
-            // Si la imagen de perfil es un Buffer, se a un formato adecuado antes de enviarlo
-            // Si es un Buffer de una imagen, se convierte a Base64
-            // Si es una URL o un path, se envia directamente
-
-            // Si el campo imagenPerfil es un Buffer
-            if (data.imagenPerfil instanceof Buffer) {
-                // Convierte el Buffer a Base64
-                const imagenBase64 = data.imagenPerfil.toString('base64');
-                // Agrega el prefijo adecuado para que se pueda mostrar como imagen en el frontend
-                data.imagenPerfil = `data:image/jpeg;base64,${imagenBase64}`;
+        .select("correo fechaDeNacimiento genero nombreCompleto imagenPerfil")
+        .then((usuario) => {
+            if (!usuario) {
+                return res.status(404).json({ message: "Usuario no encontrado" });
             }
 
-            res.json(data);
+            // Crear un nuevo objeto para evitar la mutación directa del documento de Mongoose
+            const usuarioTransformado = {
+                correo: usuario.correo,
+                fechaDeNacimiento: usuario.fechaDeNacimiento,
+                genero: usuario.genero,
+                nombreCompleto: usuario.nombreCompleto,
+                imagenPerfil: usuario.imagenPerfil
+            };
+
+            // Si la imagen de perfil es un Buffer, se convierte a Base64
+            if (Buffer.isBuffer(usuario.imagenPerfil)) {
+                // Convierte el Buffer a Base64
+                const imagenBase64 = usuario.imagenPerfil.toString('base64');
+                // Agrega el prefijo adecuado para que se pueda mostrar como imagen en el frontend
+                usuarioTransformado.imagenPerfil = `data:image/jpeg;base64,${imagenBase64}`;
+            }
+
+            res.json(usuarioTransformado);
         })
-        .catch((error) => res.json({message: error}));
+        .catch((error) => res.json({ message: error }));
 });
 
 //update a user

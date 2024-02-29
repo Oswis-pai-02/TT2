@@ -3,15 +3,15 @@ const mongoose = require('mongoose');
 const reportSchema = new mongoose.Schema({
     descripcion: {
         type: String,
-        required: true
+        required: false
     },
     imagen: {
         type: Buffer,
-        required: true
+        required: false
     },
     contentType: {
         type: String,
-        required: true
+        required: false
     },
     likes: {
         type: Number,
@@ -22,40 +22,34 @@ const reportSchema = new mongoose.Schema({
         default: 0
     },
     id_usuario: {
-        type: mongoose.Schema.Types.ObjectId, // Suponiendo que es una referencia a un usuario
-        required: true
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'usuarios'
     },
     fechaHora: {
-        type: Date, // Suponiendo que quieres almacenar tanto la fecha como la hora
+        type: Date, 
         required: true
     },
     titulo: {
         type: String,
         required: true
     },
-    autor: {
-        type: String, // Suponiendo que 'autor' es un nombre o identificador en texto
-        required: true
-    },
     estacion: {
-        type: String, // Suponiendo que 'estacion' se refiere a una estación de metro o similar
+        type: String,
         required: true
     },
     linea: {
-        type: String, // Suponiendo que 'linea' se refiere a la línea de un metro o autobús
+        type: String,
         required: true
     },
     direccion: {
-        type: String, // Suponiendo que 'direccion' se refiere a una dirección o un sentido
+        type: String,
         required: true
     },
     listaDeUsuariosQueDieronLike: [{
-        type: mongoose.Schema.Types.ObjectId, // Suponiendo que es una lista de identificadores de usuarios
-        ref: 'Usuario' // Asumiendo que tienes un modelo 'Usuario'
+        type: String, 
     }],
     listaDeUsuariosQueDieronDislike: [{
-        type: mongoose.Schema.Types.ObjectId, // Suponiendo que es una lista de identificadores de usuarios
-        ref: 'Usuario' // Asumiendo que tienes un modelo 'Usuario'
+        type: String,
     }]
 });
 
