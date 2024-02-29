@@ -50,7 +50,7 @@ router.post('/report/:reportId/like', async (req, res) => {
     const userId = req.body.userId; // ID del usuario que da like
   
     try {
-      const report = await Report.findById(reportId);
+      const report = await reportSchema.findById(reportId);
   
       if (!report.listaDeUsuariosQueDieronLike.includes(userId)) {
         // Agregar el ID del usuario a la lista de likes y aumentar el contador
@@ -58,10 +58,10 @@ router.post('/report/:reportId/like', async (req, res) => {
         report.likes += 1;
         await report.save();
         
-        res.status(200).json({ message: "Like agregado correctamente." });
+        res.status(200).json("Like agregado correctamente." );
       } else {
         // El usuario ya dio like, no hacer nada
-        res.status(200).json({ message: "El usuario ya dio like a este reporte." });
+        res.status(200).json("El usuario ya dio like a este reporte.");
       }
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -74,7 +74,7 @@ router.post('/report/:reportId/like', async (req, res) => {
     const userId = req.body.userId; // ID del usuario que da dislike
   
     try {
-      const report = await Report.findById(reportId);
+      const report = await reportSchema.findById(reportId);
   
       if (!report.listaDeUsuariosQueDieronDislike.includes(userId)) {
         // Agregar el ID del usuario a la lista de dislikes y aumentar el contador
@@ -82,10 +82,10 @@ router.post('/report/:reportId/like', async (req, res) => {
         report.dislikes += 1;
         await report.save();
         
-        res.status(200).json({ message: "Dislike agregado correctamente." });
+        res.status(200).json("Dislike agregado correctamente.");
       } else {
         // El usuario ya dio dislike, no hacer nada
-        res.status(200).json({ message: "El usuario ya dio dislike a este reporte." });
+        res.status(200).json("El usuario ya dio dislike a este reporte.");
       }
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -96,7 +96,7 @@ router.post('/report/:reportId/like', async (req, res) => {
   router.get("/report", (req, res) => {
     reportSchema
       .find()
-      .select("fechaHora linea estacion direccion id_usuario titulo descripcion imagen likes dislikes")
+      .select("_id fechaHora linea estacion direccion id_usuario titulo descripcion imagen likes dislikes")
       .populate('id_usuario', 'nombreCompleto imagenPerfil') // Usar 'id_usuario' para la población
       .then((data) => {
         const reportesTransformados = data.map(reporte => {
@@ -104,6 +104,7 @@ router.post('/report/:reportId/like', async (req, res) => {
           let imagenPerfilBase64 = reporte.id_usuario.imagenPerfil ? `data:image/jpeg;base64,${reporte.id_usuario.imagenPerfil.toString('base64')}` : null;
   
           return {
+            id: reporte._id,
             fechaHora: reporte.fechaHora,
             linea: reporte.linea,
             estacion: reporte.estacion,
