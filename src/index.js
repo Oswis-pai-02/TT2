@@ -4,6 +4,8 @@ require("dotenv").config();
 const userRoutes = require("./routes/user");
 const reportRoutes = require('./routes/report'); 
 const cors = require("cors");
+const accesibilidadRoutes = require('./routes/accesibilidad');
+const estacionesRoutes = require('./routes/estaciones');
 
 const app = express();
 const port = process.env.PORT || 9000;
@@ -19,6 +21,8 @@ app.use(cors(corsOptions)); // Usa el middleware cors con tus opciones
 app.use(express.json());
 app.use('/api', userRoutes);
 app.use('/api', reportRoutes);
+app.use('/api/accesibilidad', accesibilidadRoutes);
+app.use('/api/estaciones', estacionesRoutes);
 
 // routes
 app.get("/", (req, res) => {
