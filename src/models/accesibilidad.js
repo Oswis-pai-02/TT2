@@ -1,4 +1,3 @@
-// models/Accesibilidad.js
 const mongoose = require('mongoose');
 
 const accesibilidadSchema = new mongoose.Schema({
