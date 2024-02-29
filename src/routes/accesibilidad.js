@@ -1,4 +1,3 @@
-// routes/accesibilidad.js
 const express = require('express');
 const router = express.Router();
 const Accesibilidad = require('../models/accesibilidad');
