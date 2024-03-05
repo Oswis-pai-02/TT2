@@ -11,4 +11,4 @@ const estacionSchema = new mongoose.Schema({
   linea: { type: String, required: true }
 });
 
-module.exports = mongoose.model('estaciones', estacionSchema);
+module.exports = mongoose.model('estaciones', estacionSchema, 'estaciones');

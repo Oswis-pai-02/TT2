@@ -11,4 +11,4 @@ const accesibilidadSchema = new mongoose.Schema({
   icon: { type: String, required: true }
 });
 
-module.exports = mongoose.model('accesibilidad', accesibilidadSchema);
+module.exports = mongoose.model('accesibilidad', accesibilidadSchema, 'accesibilidad');

@@ -1,12 +1,13 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const cors = require("cors");
 require("dotenv").config();
+
 const userRoutes = require("./routes/user");
 const reportRoutes = require('./routes/report'); 
-const cors = require("cors");
 const accesibilidadRoutes = require('./routes/accesibilidad');
 const estacionesRoutes = require('./routes/estaciones');
-const fetchTweets = require('./src/utils/fetchTweets');
+//const fetchTweets = require('./utils/fetchTweets');
 
 const app = express();
 const port = process.env.PORT || 9000;
@@ -25,7 +26,7 @@ app.use('/api', reportRoutes);
 app.use('/api/accesibilidad', accesibilidadRoutes);
 app.use('/api/estaciones', estacionesRoutes);
 
-fetchTweets().then(console.log).catch(console.error);
+//fetchTweets().then(console.log).catch(console.error);
 
 // routes
 app.get("/", (req, res) => {
