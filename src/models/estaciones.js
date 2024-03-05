@@ -1,4 +1,3 @@
-// models/Estacion.js
 const mongoose = require('mongoose');
 
 const estacionSchema = new mongoose.Schema({

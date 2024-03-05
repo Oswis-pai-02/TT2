@@ -1,3 +1,6 @@
+
+//Codigo del Angel NO MOVER
+
 import puppeteer from "puppeteer";
 import fs from 'fs';
 
@@ -10,46 +13,6 @@ import fs from 'fs';
 
     const page = await browser.newPage();
 
-    //---------------------INICIO DE SESION---------------------//
-    // Navega a la página de inicio de sesión de Twitter
-    //await page.goto('https://twitter.com/login');
-
-    // Espera a que los elementos de entrada estén disponibles
-    /*await page.waitForSelector('input[name="text"]');
-
-    await page.type('input[name="text"]', 'ahri117@hotmail.com');
-    
-    await page.evaluate(() => {
-      const buttons = Array.from(document.querySelectorAll('div[role="button"]'));
-      const nextButton = buttons.find(button => button.innerText.includes('Siguiente'));
-      if (nextButton) nextButton.click();
-    });
-    
-    await page.waitForSelector('input[name="text"]');
-
-    await page.type('input[name="text"]', '@VictorLuisCarv');
-    
-    await page.evaluate(() => {
-      const buttons = Array.from(document.querySelectorAll('div[role="button"]'));
-      const nextButton = buttons.find(button => button.innerText.includes('Siguiente'));
-      if (nextButton) nextButton.click();
-    });
-    
-    await page.waitForSelector('input[name="password"]', { visible: true });
-    
-    await page.type('input[name="password"]', 'aliwuhdpoijfs@');
-    
-    await page.evaluate(() => {
-      const buttons = Array.from(document.querySelectorAll('div[role="button"]'));
-      const nextButton = buttons.find(button => button.innerText.includes('Iniciar sesión'));
-      if (nextButton) nextButton.click();
-    });*/
-    // --------------------------------------------------------------
-    //await page.waitForNavigation();
-    // --------------------------------------------------------------
-    //---------------------INICIO DE SESION---------------------//
-
-    // Navega al perfil de @MetroCDMX directamente
     await page.goto('https://twitter.com/MetroCDMX', { waitUntil: "networkidle2" });
     await page.waitForSelector('article [lang]', {timeout: 60000})
 

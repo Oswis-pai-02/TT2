@@ -1,5 +1,4 @@
-// Dentro de routes/twitterRoutes.js o algo similar
-const fetchTweets = require('../utils/fetchTweets'); // Ajusta la ruta según tu estructura de carpetas
+const fetchTweets = require('../utils/fetchTweets'); 
 
 router.get('/tweets', async (req, res) => {
   try {
