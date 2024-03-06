@@ -96,7 +96,7 @@ router.post('/report/:reportId/like', async (req, res) => {
   router.get("/report", (req, res) => {
     reportSchema
       .find()
-      .select("_id fechaHora linea estacion direccion id_usuario titulo descripcion imagen likes dislikes")
+      .select("_id fechaHora linea estacion direccion id_usuario titulo descripcion imagen likes dislikes listaDeUsuariosQueDieronLike listaDeUsuariosQueDieronDislike")
       .populate('id_usuario', 'nombreCompleto imagenPerfil') // Usar 'id_usuario' para la población
       .then((data) => {
         const reportesTransformados = data.map(reporte => {
@@ -115,7 +115,9 @@ router.post('/report/:reportId/like', async (req, res) => {
             imagen: imagenBase64,
             imagenPerfil: imagenPerfilBase64, // Incluir la imagen de perfil del autor
             likes: reporte.likes,
-            dislikes: reporte.dislikes
+            dislikes: reporte.dislikes,
+            usuariosQueDieronLike: reporte.listaDeUsuariosQueDieronLike,
+            usuariosQueDieronDislike: reporte.listaDeUsuariosQueDieronDislike
           };
         });
   
