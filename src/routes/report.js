@@ -92,12 +92,38 @@ router.post('/report/:reportId/like', async (req, res) => {
     }
   });  
 
-  //Ruta para obtener todos los reportes
+  //Ruta para obtener todos los reportes incluyendo filtros
   router.get("/report", (req, res) => {
+    // Parámetros de consulta
+    const { sort, linea, direccion, estacion } = req.query;
+  
+    // Construir el objeto de consulta basado en los parámetros proporcionados
+    let query = {};
+    if (linea) query.linea = linea;
+    if (direccion) query.direccion = direccion;
+    if (estacion) query.estacion = estacion;
+  
+    // Inicializar la variable de ordenación
+    let sortOption = {};
+  
+    // Determinar el ordenamiento basado en el parámetro 'sort'
+    switch (sort) {
+      case 'masVotados':
+        sortOption = { likes: -1 }; // Orden descendente por 'likes'
+        break;
+      case 'menosVotados':
+        sortOption = { likes: 1 }; // Orden ascendente por 'likes'
+        break;
+      default:
+        // Si no se especifica, por defecto ordenar por 'fechaHora' descendente
+        sortOption = { fechaHora: -1 };
+    }
+  
     reportSchema
-      .find()
+      .find(query)
       .select("_id fechaHora linea estacion direccion id_usuario titulo descripcion imagen likes dislikes listaDeUsuariosQueDieronLike listaDeUsuariosQueDieronDislike")
-      .populate('id_usuario', 'nombreCompleto imagenPerfil') // Usar 'id_usuario' para la población
+      .populate('id_usuario', 'nombreCompleto imagenPerfil')
+      .sort(sortOption) // Aplicar la opción de ordenamiento
       .then((data) => {
         const reportesTransformados = data.map(reporte => {
           let imagenBase64 = reporte.imagen ? `data:image/jpeg;base64,${reporte.imagen.toString('base64')}` : null;
@@ -109,11 +135,11 @@ router.post('/report/:reportId/like', async (req, res) => {
             linea: reporte.linea,
             estacion: reporte.estacion,
             direccion: reporte.direccion,
-            autor: reporte.id_usuario.nombreCompleto, // Usando id_usuario para obtener el nombre completo del autor
+            autor: reporte.id_usuario.nombreCompleto,
             titulo: reporte.titulo,
             descripcion: reporte.descripcion,
             imagen: imagenBase64,
-            imagenPerfil: imagenPerfilBase64, // Incluir la imagen de perfil del autor
+            imagenPerfil: imagenPerfilBase64,
             likes: reporte.likes,
             dislikes: reporte.dislikes,
             usuariosQueDieronLike: reporte.listaDeUsuariosQueDieronLike,
