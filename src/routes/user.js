@@ -7,13 +7,36 @@ const userSchema = require("../models/user");
 const storage = multer.memoryStorage(); // Guarda los archivos en la memoria como Buffer
 const upload = multer({ storage: storage });
 
+//Encriptacion
+require('dotenv').config();
+const crypto = require('crypto');
+const ALGORITHM = process.env.ALGORITHM;
+const SECRET_KEY = process.env.SECRET_KEY;
+
+// Función para encriptar texto
+function encrypt(text) {
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(SECRET_KEY, 'hex'), iv);
+    let encrypted = cipher.update(text, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return iv.toString('hex') + ':' + encrypted;
+}
+
+// Función para descifrar texto
+function decrypt(encryptedText) {
+    const textParts = encryptedText.split(':');
+    const iv = Buffer.from(textParts.shift(), 'hex');
+    const encrypted = textParts.join(':');
+    const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(SECRET_KEY, 'hex'), iv);
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+}
+
 // create user
 router.post("/users", (req, res) => {
-
-    // Buscar si ya existe un usuario con el mismo correo electrónico
     userSchema.findOne({ correo: req.body.correo })
         .then((existingUser) => {
-            console.log(existingUser);
             if (existingUser) {
                 // Si el usuario ya existe, enviar un mensaje de error
                 return res.json({
@@ -21,8 +44,13 @@ router.post("/users", (req, res) => {
                 });
             }
 
-            // Si el usuario no existe, crear uno nuevo
-            const user = new userSchema(req.body);
+            // Si el usuario no existe, encriptar la contraseña antes de crear uno nuevo
+            const encryptedPassword = encrypt(req.body.contrasenia);
+            const user = new userSchema({
+                ...req.body,
+                contrasenia: encryptedPassword // Usa la contraseña encriptada
+            });
+
             user.save()
                 .then((savedUser) => res.json({
                     message: "Usuario registrado correctamente",
@@ -141,7 +169,6 @@ router.delete("/users/:id", (req, res) => {
         .catch((error) => res.json({message: error}));
 });
 
-
 // Ruta para obtener la contraseña por correo electrónico
 router.get('/users/getPassword/:correo', (req, res) => {
     const { correo } = req.params;
@@ -150,10 +177,9 @@ router.get('/users/getPassword/:correo', (req, res) => {
         .select('contrasenia') // Solo seleccionar la contraseña, _id se incluye por defecto
         .then((user) => {
             if (user) {
-                // Devolver el ID y la contraseña
+                // Encriptar la contraseña antes de devolverla
                 res.json({ id: user._id, contrasenia: user.contrasenia });
             } else {
-                // Manejar el caso en que no se encuentre el usuario
                 res.json({ message: 'Usuario no encontrado' });
             }
         })
