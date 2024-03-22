@@ -7,9 +7,8 @@ const userRoutes = require("./routes/user");
 const reportRoutes = require('./routes/report'); 
 const accesibilidadRoutes = require('./routes/accesibilidad');
 const estacionesRoutes = require('./routes/estaciones');
-const tweetRoutes = require('./routes/TweetRoute');
+const tweetRoutes = require('./routes/tweet');
 const fetchTweets = require('./utils/fetchTweets');
-//const fetchTweets = require('./utils/fetchTweets');
 
 const app = express();
 const port = process.env.PORT || 9000;
@@ -27,9 +26,7 @@ app.use('/api', userRoutes);
 app.use('/api', reportRoutes);
 app.use('/api/accesibilidad', accesibilidadRoutes);
 app.use('/api/estaciones', estacionesRoutes);
-app.use(tweetRoutes);
-
-//fetchTweets().then(console.log).catch(console.error);
+app.use('/api/tweets', tweetRoutes);
 
 // routes
 app.get("/", (req, res) => {
@@ -39,11 +36,15 @@ app.get("/", (req, res) => {
 //mongodb connection
 mongoose
     .connect(process.env.MONGODB_URI)
-    .then(() => console.log("Conectado a mongo"))
+    .then(() => {
+        console.log("Conectado a mongo");
+
+        //tweets obtencion
+        fetchTweets().catch(console.error);
+
+        //Para ejecutar fetchTweets en intervalos regulares, puedes descomentar la siguiente línea
+        setInterval(fetchTweets, 1000 * 60 * 60); // Cada hora, ajusta según necesites
+    })
     .catch((error) => console.error(error));
 
-app.listen(port, () => console.log("server listening on port", port));
-
-
-//tweets obtencion
-fetchTweets().catch(console.error);
+app.listen(port, () => console.log(`Servidor corriendo en http://localhost:${port}`));
