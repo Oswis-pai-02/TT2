@@ -5,10 +5,10 @@ const loadTweetsToDB = require('./loadTweetsToDB');
 
 async function fetchTweets() {
     const browser = await puppeteer.launch({
-        executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', // Reemplaza con la ruta correcta a Chrome
+        executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
         headless: false, // Cambia a true para producción
         slowMo: 50,
-        //userDataDir: 'C:\\Users\\ahri1\\AppData\\Local\\Google\\Chrome\\User Data\\Profile 1',
+        userDataDir: 'C:\\Users\\ahri1\\AppData\\Local\\Google\\Chrome\\User Data\\Profile 1',
     });
 
 
