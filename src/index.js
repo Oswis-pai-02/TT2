@@ -33,17 +33,17 @@ app.get("/", (req, res) => {
     res.send("Welcome to my API");
 });
 
+//tweets obtencion
+fetchTweets().catch(console.error);
+
+//Para ejecutar fetchTweets en intervalos regulares
+setInterval(fetchTweets, 1000 * 60 * 5); // Cada 5 minutos
+
 //mongodb connection
 mongoose
     .connect(process.env.MONGODB_URI)
     .then(() => {
         console.log("Conectado a mongo");
-
-        //tweets obtencion
-        fetchTweets().catch(console.error);
-
-        //Para ejecutar fetchTweets en intervalos regulares, puedes descomentar la siguiente línea
-        setInterval(fetchTweets, 1000 * 60 * 60); // Cada hora, ajusta según necesites
     })
     .catch((error) => console.error(error));
 
