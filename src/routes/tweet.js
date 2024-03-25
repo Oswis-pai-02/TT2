@@ -5,7 +5,7 @@ const path = require('path');
 const Tweet = require('../models/tweet');
 
 // Ruta para obtener los ultimos 10 tweets de la base de datos
-router.get('/getTweets', async (req, res) => {
+router.get('/', async (req, res) => {
     try {
       // Asume que tus documentos tienen un campo 'createdAt' o 'tweetDate' para la fecha del tweet
       // Cambia 'createdAt' por el nombre real del campo de fecha en tu esquema si es necesario
