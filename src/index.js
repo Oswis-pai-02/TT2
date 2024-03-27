@@ -8,6 +8,7 @@ const reportRoutes = require('./routes/report');
 const accesibilidadRoutes = require('./routes/accesibilidad');
 const estacionesRoutes = require('./routes/estaciones');
 const tweetRoutes = require('./routes/tweet');
+const tiemposRoutes = require('./routes/tiempos');
 const fetchTweets = require('./utils/fetchTweets');
 
 const app = express();
@@ -27,6 +28,7 @@ app.use('/api', reportRoutes);
 app.use('/api/accesibilidad', accesibilidadRoutes);
 app.use('/api/estaciones', estacionesRoutes);
 app.use('/api/tweets', tweetRoutes);
+app.use('/api/tiempos', tiemposRoutes);
 
 // routes
 app.get("/", (req, res) => {
