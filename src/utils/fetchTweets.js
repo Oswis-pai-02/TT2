@@ -1,6 +1,7 @@
 const puppeteer = require("puppeteer");
 const fs = require('fs');
 const loadTweetsToDB = require('./loadTweetsToDB');
+const { procesarImagenConOCR } = require('./getTimes');
 
 async function fetchTweets() {
     const browser = await puppeteer.launch({
@@ -37,16 +38,21 @@ async function fetchTweets() {
 
     if (tweet) {
         await loadTweetsToDB(tweet); // Aquí guardamos el tweet en la base de datos.
+
+        const rutaImagen = '"./src/img/avance.png"';
+
+        procesarImagenConOCR(rutaImagen)
+        .then(resultados => {
+            console.log('Resultados OCR:', resultados);
+        })
+        .catch(error => {
+            console.error('Error procesando la imagen:', error);
+        });
+
+
     } else {
         console.log('No se encontró ningún tweet.');
     }
-
-    /*if (tweet && tweet.tweetImage) {
-        const response = await fetch(tweet.tweetImage);
-        const imageBuffer = await response.buffer();
-        // Podrías querer convertir esto a base64 si planeas almacenarlo en JSON
-        tweet.tweetImageBase64 = imageBuffer.toString('base64');
-    }*/
 }
 
 module.exports = fetchTweets;
