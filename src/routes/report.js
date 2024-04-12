@@ -93,63 +93,69 @@ router.post('/report/:reportId/like', async (req, res) => {
   });  
 
   //Ruta para obtener todos los reportes incluyendo filtros
-  router.get("/report", (req, res) => {
-    // Parámetros de consulta
-    const { sort, linea, direccion, estacion } = req.query;
-  
-    // Construir el objeto de consulta basado en los parámetros proporcionados
-    let query = {};
-    if (linea) query.linea = linea;
-    if (direccion) query.direccion = direccion;
-    if (estacion) query.estacion = estacion;
-  
-    // Inicializar la variable de ordenación
-    let sortOption = {};
-  
-    // Determinar el ordenamiento basado en el parámetro 'sort'
-    switch (sort) {
-      case 'masVotados':
-        sortOption = { likes: -1 }; // Orden descendente por 'likes'
-        break;
-      case 'menosVotados':
-        sortOption = { likes: 1 }; // Orden ascendente por 'likes'
-        break;
-      default:
-        // Si no se especifica, por defecto ordenar por 'fechaHora' descendente
-        sortOption = { fechaHora: -1 };
-    }
-  
-    reportSchema
-      .find(query)
-      .select("_id fechaHora linea estacion direccion id_usuario titulo descripcion imagen likes dislikes listaDeUsuariosQueDieronLike listaDeUsuariosQueDieronDislike")
-      .populate('id_usuario', 'nombreCompleto imagenPerfil')
-      .sort(sortOption) // Aplicar la opción de ordenamiento
-      .then((data) => {
-        const reportesTransformados = data.map(reporte => {
-          let imagenBase64 = reporte.imagen ? `data:image/jpeg;base64,${reporte.imagen.toString('base64')}` : null;
-          let imagenPerfilBase64 = reporte.id_usuario.imagenPerfil ? `data:image/jpeg;base64,${reporte.id_usuario.imagenPerfil.toString('base64')}` : null;
-  
-          return {
-            id: reporte._id,
-            fechaHora: reporte.fechaHora,
-            linea: reporte.linea,
-            estacion: reporte.estacion,
-            direccion: reporte.direccion,
-            autor: reporte.id_usuario.nombreCompleto,
-            titulo: reporte.titulo,
-            descripcion: reporte.descripcion,
-            imagen: imagenBase64,
-            imagenPerfil: imagenPerfilBase64,
-            likes: reporte.likes,
-            dislikes: reporte.dislikes,
-            usuariosQueDieronLike: reporte.listaDeUsuariosQueDieronLike,
-            usuariosQueDieronDislike: reporte.listaDeUsuariosQueDieronDislike
-          };
-        });
-  
-        res.json(reportesTransformados);
-      })
-      .catch((error) => res.json({ message: error }));
+  //Ruta para obtener todos los reportes incluyendo filtros
+router.get("/report", (req, res) => {
+  // Parámetros de consulta
+  const { sort, linea, direccion, estacion, fechaInicio, fechaFin } = req.query;
+
+  // Construir el objeto de consulta basado en los parámetros proporcionados
+  let query = {};
+  if (linea) query.linea = linea;
+  if (direccion) query.direccion = direccion;
+  if (estacion) query.estacion = estacion;
+
+  // Filtrar por rango de fecha y hora si se proporcionan ambos parámetros
+  if (fechaInicio && fechaFin) {
+    query.fechaHora = { $gte: new Date(fechaInicio), $lte: new Date(fechaFin) };
+  }
+
+  // Inicializar la variable de ordenación
+  let sortOption = {};
+
+  // Determinar el ordenamiento basado en el parámetro 'sort'
+  switch (sort) {
+    case 'masVotados':
+      sortOption = { likes: -1 }; // Orden descendente por 'likes'
+      break;
+    case 'menosVotados':
+      sortOption = { likes: 1 }; // Orden ascendente por 'likes'
+      break;
+    default:
+      // Si no se especifica, por defecto ordenar por 'fechaHora' descendente
+      sortOption = { fechaHora: -1 };
+  }
+
+  reportSchema
+    .find(query)
+    .select("_id fechaHora linea estacion direccion id_usuario titulo descripcion imagen likes dislikes listaDeUsuariosQueDieronLike listaDeUsuariosQueDieronDislike")
+    .populate('id_usuario', 'nombreCompleto imagenPerfil')
+    .sort(sortOption) // Aplicar la opción de ordenamiento
+    .then((data) => {
+      const reportesTransformados = data.map(reporte => {
+        let imagenBase64 = reporte.imagen ? `data:image/jpeg;base64,${reporte.imagen.toString('base64')}` : null;
+        let imagenPerfilBase64 = reporte.id_usuario.imagenPerfil ? `data:image/jpeg;base64,${reporte.id_usuario.imagenPerfil.toString('base64')}` : null;
+
+        return {
+          id: reporte._id,
+          fechaHora: reporte.fechaHora,
+          linea: reporte.linea,
+          estacion: reporte.estacion,
+          direccion: reporte.direccion,
+          autor: reporte.id_usuario.nombreCompleto,
+          titulo: reporte.titulo,
+          descripcion: reporte.descripcion,
+          imagen: imagenBase64,
+          imagenPerfil: imagenPerfilBase64,
+          likes: reporte.likes,
+          dislikes: reporte.dislikes,
+          usuariosQueDieronLike: reporte.listaDeUsuariosQueDieronLike,
+          usuariosQueDieronDislike: reporte.listaDeUsuariosQueDieronDislike
+        };
+      });
+
+      res.json(reportesTransformados);
+    })
+    .catch((error) => res.json({ message: error }));
   });
   
   //Eliminar reportes con su id
