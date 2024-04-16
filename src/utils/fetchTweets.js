@@ -2,6 +2,9 @@ const puppeteer = require("puppeteer");
 const fs = require('fs');
 const loadTweetsToDB = require('./loadTweetsToDB');
 const { procesarImagenConOCR } = require('./getTimes');
+const axios = require('axios');
+const path = require('path');
+
 
 async function fetchTweets() {
     const browser = await puppeteer.launch({
@@ -39,16 +42,38 @@ async function fetchTweets() {
     if (tweet) {
         await loadTweetsToDB(tweet); // Aquí guardamos el tweet en la base de datos.
 
-        const rutaImagen = '"./src/img/avance.png"';
+        if(tweet.tweetText=='Conoce el avance de los trenes de la Red y planea tu viaje. Toma previsiones.'){
 
-        procesarImagenConOCR(rutaImagen)
-        .then(resultados => {
-            console.log('Resultados OCR:', resultados);
-        })
-        .catch(error => {
-            console.error('Error procesando la imagen:', error);
-        });
+            const imageUrl = tweet.tweetImage;
+            const baseDirectory = path.resolve(__dirname, '..', '..');
+            const imageFilePath = path.join(baseDirectory, 'src', 'img', 'avance.png');
 
+            const response = await axios({
+                method: 'GET',
+                url: imageUrl,
+                responseType: 'stream'
+            });
+
+            const writer = fs.createWriteStream(imageFilePath);
+
+            response.data.pipe(writer);
+
+            return new Promise((resolve, reject) => {
+                writer.on('finish', () => {
+                    console.log('Imagen descargada y guardada en:', imageFilePath);
+                    resolve();
+                });
+                writer.on('error', reject);
+            }).then(() => {
+                procesarImagenConOCR(imageFilePath)
+                    .then(resultados => {
+                        console.log('Resultados OCR:', resultados);
+                    })
+                    .catch(error => {
+                        console.error('Error procesando la imagen:', error);
+                    });
+            });
+        }
 
     } else {
         console.log('No se encontró ningún tweet.');

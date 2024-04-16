@@ -41,11 +41,6 @@ fetchTweets().catch(console.error);
 //Para ejecutar fetchTweets en intervalos regulares
 setInterval(fetchTweets, 1000 * 60 * 5); // Cada 5 minutos
 
-const path = require('path');
-
-// Imprime la ruta absoluta para verificarla
-console.log(path.resolve('./src/img/avance.png'));
-
 //mongodb connection
 mongoose
     .connect(process.env.MONGODB_URI)
