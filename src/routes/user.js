@@ -75,13 +75,14 @@ router.post("/users", (req, res) => {
 router.get("/users", (req, res) => {
     userSchema
         .find()
-        .select("correo nombreCompleto imagenPerfil")
+        .select("_id correo nombreCompleto imagenPerfil")
         .then((data) => {
             const usuariosTransformados = data.map(usuario => {
                 // Convertir imagenPerfil de Buffer a Base64 si existe
                 let imagenPerfilBase64 = usuario.imagenPerfil ? `data:image/jpeg;base64,${usuario.imagenPerfil.toString('base64')}` : null;
 
                 return {
+                    _id: usuario._id,
                     correo: usuario.correo,
                     nombreCompleto: usuario.nombreCompleto,
                     imagenPerfil: imagenPerfilBase64 // Usar la imagen convertida o null si no existe
@@ -130,8 +131,6 @@ router.get("/users/:id", (req, res) => {
 //update a user password
 router.put("/users/update-password", (req, res) => {
     const { email, contrasenia } = req.body;
-
-    console.log(email);
 
     // Verificar que tanto el email como la contraseña estén presentes
     if (!email || !contrasenia) {
