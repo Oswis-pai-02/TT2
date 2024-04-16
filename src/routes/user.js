@@ -2,6 +2,16 @@ const express = require("express");
 const router = express.Router();
 const multer = require('multer'); // Multer se usa para manejar form-data, particularmente para la carga de archivos
 const userSchema = require("../models/user");
+const nodemailer = require('nodemailer');
+
+// Configuración del transportador de nodemailer
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'demostraciones.crs@gmail.com', 
+        pass: 'aymt vhik thmw hxxr' 
+    }
+});
 
 // Configuración de Multer para manejar la carga de archivos
 const storage = multer.memoryStorage(); // Guarda los archivos en la memoria como Buffer
@@ -116,15 +126,46 @@ router.get("/users/:id", (req, res) => {
         .catch((error) => res.json({ message: error }));
 });
 
+
+//update a user password
+router.put("/users/update-password", (req, res) => {
+    const { email, contrasenia } = req.body;
+
+    console.log(email);
+
+    // Verificar que tanto el email como la contraseña estén presentes
+    if (!email || !contrasenia) {
+        return res.json("Email y contraseña son requeridos");
+    }
+
+    // Encriptar la contraseña antes de actualizarla en la base de datos
+    const encryptedPassword = encrypt(contrasenia);
+
+    // Actualiza en la base de datos solo el campo contrasenia
+    userSchema
+        .updateOne({ correo: email }, { $set: { contrasenia: encryptedPassword } })
+        .then(data => {
+            // Verifica si se actualizó algún documento
+            if (data.modifiedCount > 0) {
+                res.json( "Contraseña actualizada correctamente");
+            } else {
+                res.json("No se encontró el usuario o la información es la misma");
+            }
+        })
+        .catch(error => res.status(500).json({ message: error }));
+});
+
 //update a user
 router.put("/users/:id", (req, res) => {
     const { id } = req.params;
-    // Extraes solo nombreCompleto y contrasenia de req.body
+    // Extraee solo nombreCompleto y contrasenia de req.body
     const { nombreCompleto, contrasenia } = req.body;
 
-    // Actualizas en la base de datos solo los campos nombreCompleto y contrasenia
+    const encryptedPassword = encrypt(contrasenia);
+
+    // Actualiza en la base de datos solo los campos nombreCompleto y contrasenia
     userSchema
-        .updateOne({ _id: id }, { $set: { nombreCompleto, contrasenia } })
+        .updateOne({ _id: id }, { $set: { nombreCompleto, encryptedPassword } })
         .then(data => {
             // Verifica si se actualizó algún documento
             if (data.modifiedCount > 0) {
@@ -134,6 +175,46 @@ router.put("/users/:id", (req, res) => {
             }
         })
         .catch(error => res.json({ message: error }));
+});
+
+//send code
+router.post("/users/send-code", (req, res) => {
+    const { correo } = req.body;
+
+    if (!correo) {
+        return res.status(400).json({ message: "Email es requerido" });
+    }
+
+    userSchema.findOne({ correo: correo }).then(user => {
+        if (!user) {
+            return res.json("Usuario no encontrado");
+        }
+
+        // Genera un código de 5 dígitos aleatorio
+        const code = Math.floor(10000 + Math.random() * 90000).toString();
+
+        // Configura las opciones del correo
+        const mailOptions = {
+            from: 'demostraciones.crs@gmail.com',
+            to: correo,
+            subject: 'Código de verificación Metro Tracker',
+            text: `Tu código de verificación es: ${code}`
+        };
+
+        // Envía el correo con el código
+        transporter.sendMail(mailOptions, function(error, info){
+            if (error) {
+                console.log(error);
+                res.json('Error al enviar el correo');
+            } else {
+                console.log('Email enviado: ' + info.response);
+                res.json({ code: code }); // Retorna el código generado
+            }
+        });
+
+    }).catch(error => {
+        res.status(500).json({ message: error });
+    });
 });
 
 //update profile image
