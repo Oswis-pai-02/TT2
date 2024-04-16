@@ -4,6 +4,7 @@ const loadTweetsToDB = require('./loadTweetsToDB');
 const { procesarImagenConOCR } = require('./getTimes');
 const axios = require('axios');
 const path = require('path');
+const addTiempoToDB = require("./loadTimesToDB");
 
 
 async function fetchTweets() {
@@ -68,6 +69,7 @@ async function fetchTweets() {
                 procesarImagenConOCR(imageFilePath)
                     .then(resultados => {
                         console.log('Resultados OCR:', resultados);
+                        addTiempoToDB(resultados);
                     })
                     .catch(error => {
                         console.error('Error procesando la imagen:', error);

@@ -15,8 +15,8 @@ function procesarImagenConOCR(rutaImagen) {
     const secciones = [
         //Linea superior
         { x: 70, y: 155, ancho: 70, alto: 30 },
-        { x: 170, y: 155, ancho: 70, alto: 30 },
-        { x: 270, y: 155, ancho: 70, alto: 30 },
+        { x: 175, y: 155, ancho: 70, alto: 30 },
+        { x: 275, y: 155, ancho: 70, alto: 30 },
         { x: 370, y: 155, ancho: 70, alto: 30 },
         { x: 480, y: 155, ancho: 70, alto: 30 },
         { x: 580, y: 155, ancho: 70, alto: 30 },
@@ -24,8 +24,8 @@ function procesarImagenConOCR(rutaImagen) {
         { x: 70, y: 285, ancho: 70, alto: 30 },
         { x: 170, y: 285, ancho: 70, alto: 30 },
         { x: 270, y: 285, ancho: 70, alto: 30 },
-        { x: 370, y: 285, ancho: 70, alto: 30 },
-        { x: 480, y: 285, ancho: 70, alto: 30 },
+        { x: 375, y: 285, ancho: 70, alto: 30 },
+        { x: 475, y: 285, ancho: 70, alto: 30 },
         { x: 580, y: 285, ancho: 70, alto: 30 },
     ];
 
@@ -40,7 +40,7 @@ function procesarImagenConOCR(rutaImagen) {
     if (index < 9) return `linea_${index + 1}`;
     if (index === 9) return 'linea_A';
     if (index === 10) return 'linea_B';
-    if (index === 12) return 'linea_12';
+    if (index === 11) return 'linea_12';
     return `linea_${index}`; 
   }
 
@@ -58,7 +58,8 @@ function procesarImagenConOCR(rutaImagen) {
           'eng',
           options 
         ).then(({ data: { text } }) => {
-          resultadosOCR[nombreLinea] = text.trim(); // Almacena el texto reconocido, eliminando espacios en blanco al principio y al final
+          let processedText = text.replace(/min/g, '').trim();
+          resultadosOCR[nombreLinea] = processedText; // Almacena el texto reconocido, eliminando espacios en blanco y la palabra min
         }).catch(error => {
           console.error('Ocurrió un error:', error);
         }).finally(() => {

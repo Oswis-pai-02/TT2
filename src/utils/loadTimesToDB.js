@@ -1,7 +1,6 @@
 const Tiempo = require('../models/tiempos');
 
 async function addTiempoToDB(tiempoData) {
-    console.log(tiempoData);
 
     try {
         // Crea un nuevo documento en la base de datos con los datos proporcionados
@@ -19,9 +18,11 @@ async function addTiempoToDB(tiempoData) {
                 linea_9: tiempoData.linea_9,
                 linea_A: tiempoData.linea_A,
                 linea_B: tiempoData.linea_B,
-                linea_11: tiempoData.linea_11 
+                linea_12: tiempoData.linea_12 
             }
         });
+
+
 
         await newTiempo.save();
         console.log("Registro de tiempo añadido correctamente a la base de datos.");
