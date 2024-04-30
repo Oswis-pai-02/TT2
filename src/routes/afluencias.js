@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Afluencia = require('./models/afluencia');
-const Estacion = require('./models/estaciones'); // Asegúrate de ajustar la ruta a tu modelo de estaciones
+const Afluencia = require('../models/afluencia');
 
 // Ruta para obtener las afluencias de una línea y dirección específicas
 router.get('/afluencias/:linea/:direccion', async (req, res) => {
