@@ -3,9 +3,13 @@ const router = express.Router();
 const Afluencia = require('../models/afluencia');
 
 // Ruta para obtener las afluencias de una línea y dirección específicas
-router.get('/afluencias/:linea/:direccion', async (req, res) => {
-  const { linea, direccion } = req.params;
-  const diezMinutosAtras = new Date(new Date() - 10 * 60000); // Hora actual menos 10 minutos
+router.post('/', async (req, res) => {
+  const { linea, direccion } = req.body;
+
+  const diezMinutosAtras = new Date(new Date().getTime() - 10 * 60000);
+
+  //console.log('Recibido - Linea:', linea, 'Direccion:', direccion);
+  //console.log('Tiempo consultado desde:', diezMinutosAtras.toISOString());
 
   try {
     const afluencias = await Afluencia.aggregate([
@@ -18,41 +22,61 @@ router.get('/afluencias/:linea/:direccion', async (req, res) => {
       },
       {
         $lookup: {
-          from: 'estaciones', // Nombre de la colección de estaciones
-          localField: 'estacion', // Campo en la colección de afluencias
-          foreignField: 'estacion', // Campo en la colección de estaciones
+          from: 'estaciones',
+          localField: 'estacion',
+          foreignField: 'estacion',
           as: 'datosEstacion'
         }
       },
       {
-        $unwind: '$datosEstacion' // Necesario para acceder a los datos de estaciones
+        $unwind: '$datosEstacion'
       },
       {
-        $project: {
-          estacion: "$estacion",
-          afluencia: {
-            $round: [
-              {
-                $multiply: [
-                  { $divide: [{ $avg: "$prediccion" }, '$datosEstacion.capacidad'] },
-                  100
-                ]
-              },
-              2  // Opcional: Redondear a dos decimales
-            ]
-          }
+        $lookup: {
+          from: 'accesibilidad',  
+          localField: 'estacion',
+          foreignField: 'title',
+          as: 'datosAccesibilidad'
         }
       },
       {
-        $sort: { estacion: 1 }  // Opcional: Ordenar por estación
+        $unwind: '$datosAccesibilidad'
+      },
+      {
+        $group: {
+          _id: "$estacion",
+          afluenciaPromedio: {
+            $avg: {
+              $multiply: [
+                { $divide: ["$prediccion", '$datosEstacion.capacidad'] },
+                100
+              ]
+            }
+          },
+          icono: { $first: "$datosAccesibilidad.icon" } // Asume que cada estación tiene un único ícono asociado
+        }
+      },
+      {
+        $project: {
+          estacion: "$_id",
+          afluencia: {
+            $round: ["$afluenciaPromedio", 2]
+          },
+          icono: 1
+        }
+      },
+      {
+        $sort: { estacion: 1 }
       }
     ]);
 
-    // Reformatear el resultado para ajustarse al formato requerido
-    const resultado = afluencias.map(item => ({ estacion: item.estacion, afluencia: item.afluencia }));
+    console.log('Resultado de la agregación:', afluencias);
+
+    const resultado = afluencias.map(item => ({ estacion: item.estacion, afluencia: item.afluencia, icono: item.icono }));
 
     res.json(resultado);
   } catch (error) {
+    console.error('Error en la agregación:', error);
     res.status(500).json({ message: 'Error al obtener las afluencias', error: error });
   }
 });
