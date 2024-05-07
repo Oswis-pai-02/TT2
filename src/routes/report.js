@@ -7,93 +7,117 @@ const reportSchema = require('../models/report');
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-//Ruta para subir un reporte
-router.post('/report', upload.single('imagen'), async (req, res) => {
-    try {
-        let imagenBuffer = null;
-        let contentType = null;
+// Ruta para gestionar 'like' en un reporte
+router.post('/report/:reportId/like', async (req, res) => {
+  const { reportId } = req.params;
+  const { userId } = req.body;
 
-        // Verificar si se proporcionó una imagen en la solicitud
-        if (req.file) {
-            imagenBuffer = req.file.buffer;
-            contentType = req.file.mimetype;
-        }
+  try {
+      const report = await reportSchema.findById(reportId);
+      if (!report) {
+          return res.status(404).json("Reporte no encontrado.");
+      }
 
-        // Calcular la fecha y hora actual
-        const fechaHoraActual = new Date();
+      // Gestionar el cambio de 'dislike' a 'like'
+      if (report.listaDeUsuariosQueDieronDislike.includes(userId)) {
+          const index = report.listaDeUsuariosQueDieronDislike.indexOf(userId);
+          report.listaDeUsuariosQueDieronDislike.splice(index, 1);
+          report.dislikes--;
+      }
 
-        // Crear un nuevo reporte con la información proporcionada en la solicitud
-        const newReport = new reportSchema({
-            descripcion: req.body.descripcion,
-            imagen: imagenBuffer,
-            contentType: contentType,
-            id_usuario: req.body.id_usuario,
-            titulo: req.body.titulo,
-            estacion: req.body.estacion,
-            linea: req.body.linea,
-            direccion: req.body.direccion,
-            fechaHora: fechaHoraActual
-        });
-
-        // Guardar el nuevo reporte en la base de datos
-        await newReport.save();
-
-        res.json("Reporte creado de forma exitosa");
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+      // Agregar o remover 'like'
+      const indexLike = report.listaDeUsuariosQueDieronLike.indexOf(userId);
+      if (indexLike === -1) {
+          report.listaDeUsuariosQueDieronLike.push(userId);
+          report.likes++;
+          await report.save();
+          res.status(200).json("Like agregado correctamente.");
+      } else {
+          report.listaDeUsuariosQueDieronLike.splice(indexLike, 1);
+          report.likes--;
+          await report.save();
+          res.status(200).json("Like removido correctamente.");
+      }
+  } catch (error) {
+      res.status(500).json({ error: error.message });
+  }
 });
 
-// Ruta para agregar un like a un reporte
-router.post('/report/:reportId/like', async (req, res) => {
-    const reportId = req.params.reportId;
-    const userId = req.body.userId; // ID del usuario que da like
-  
-    try {
-      const report = await reportSchema.findById(reportId);
-  
-      if (!report.listaDeUsuariosQueDieronLike.includes(userId)) {
-        // Agregar el ID del usuario a la lista de likes y aumentar el contador
-        report.listaDeUsuariosQueDieronLike.push(userId);
-        report.likes += 1;
-        await report.save();
-        
-        res.status(200).json("Like agregado correctamente." );
-      } else {
-        // El usuario ya dio like, no hacer nada
-        res.status(200).json("El usuario ya dio like a este reporte.");
-      }
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
+// Ruta para gestionar 'dislike' en un reporte
+router.post('/report/:reportId/dislike', async (req, res) => {
+  const { reportId } = req.params;
+  const { userId } = req.body;
 
-  //Ruta para agregar un dislike a un reporte
-  router.post('/report/:reportId/dislike', async (req, res) => {
-    const reportId = req.params.reportId;
-    const userId = req.body.userId; // ID del usuario que da dislike
-  
-    try {
+  try {
       const report = await reportSchema.findById(reportId);
-  
-      if (!report.listaDeUsuariosQueDieronDislike.includes(userId)) {
-        // Agregar el ID del usuario a la lista de dislikes y aumentar el contador
-        report.listaDeUsuariosQueDieronDislike.push(userId);
-        report.dislikes += 1;
-        await report.save();
-        
-        res.status(200).json("Dislike agregado correctamente.");
-      } else {
-        // El usuario ya dio dislike, no hacer nada
-        res.status(200).json("El usuario ya dio dislike a este reporte.");
+      if (!report) {
+          return res.status(404).json("Reporte no encontrado.");
       }
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });  
 
-  //Ruta para obtener todos los reportes incluyendo filtros
-  //Ruta para obtener todos los reportes incluyendo filtros
+      // Gestionar el cambio de 'like' a 'dislike'
+      if (report.listaDeUsuariosQueDieronLike.includes(userId)) {
+          const index = report.listaDeUsuariosQueDieronLike.indexOf(userId);
+          report.listaDeUsuariosQueDieronLike.splice(index, 1);
+          report.likes--;
+      }
+
+      // Agregar o remover 'dislike'
+      const indexDislike = report.listaDeUsuariosQueDieronDislike.indexOf(userId);
+      if (indexDislike === -1) {
+          report.listaDeUsuariosQueDieronDislike.push(userId);
+          report.dislikes++;
+          await report.save();
+          res.status(200).json("Dislike agregado correctamente.");
+      } else {
+          report.listaDeUsuariosQueDieronDislike.splice(indexDislike, 1);
+          report.dislikes--;
+          await report.save();
+          res.status(200).json("Dislike removido correctamente.");
+      }
+  } catch (error) {
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// Ruta para agregar o quitar un dislike a un reporte
+router.post('/report/:reportId/dislike', async (req, res) => {
+  const reportId = req.params.reportId;
+  const userId = req.body.userId;
+
+  try {
+      const report = await reportSchema.findById(reportId);
+      if (!report) {
+          return res.status(404).json("Reporte no encontrado.");
+      }
+
+      // Remover like si existe
+      const hadLike = report.listaDeUsuariosQueDieronLike.includes(userId);
+      if (hadLike) {
+          const index = report.listaDeUsuariosQueDieronLike.indexOf(userId);
+          report.listaDeUsuariosQueDieronLike.splice(index, 1);
+          report.likes--;
+      }
+
+      // Agregar o remover dislike
+      const indexDislike = report.listaDeUsuariosQueDieronDislike.indexOf(userId);
+      if (indexDislike === -1) {
+          report.listaDeUsuariosQueDieronDislike.push(userId);
+          report.dislikes++;
+          await report.save();
+          res.status(200).json("Dislike agregado correctamente.");
+      } else {
+          report.listaDeUsuariosQueDieronDislike.splice(indexDislike, 1);
+          report.dislikes--;
+          await report.save();
+          res.status(200).json("Dislike removido correctamente.");
+      }
+  } catch (error) {
+      res.status(500).json({ error: error.message });
+  }
+});
+
+
+//Ruta para obtener todos los reportes incluyendo filtros
 router.get("/report", (req, res) => {
   // Parámetros de consulta
   const { sort, linea, direccion, estacion, fechaInicio, fechaFin } = req.query;
