@@ -116,58 +116,18 @@ router.post('/report/:reportId/dislike', async (req, res) => {
   }
 });
 
-// Ruta para agregar o quitar un dislike a un reporte
-router.post('/report/:reportId/dislike', async (req, res) => {
-  const reportId = req.params.reportId;
-  const userId = req.body.userId;
 
-  try {
-      const report = await reportSchema.findById(reportId);
-      if (!report) {
-          return res.status(404).json("Reporte no encontrado.");
-      }
-
-      // Remover like si existe
-      const hadLike = report.listaDeUsuariosQueDieronLike.includes(userId);
-      if (hadLike) {
-          const index = report.listaDeUsuariosQueDieronLike.indexOf(userId);
-          report.listaDeUsuariosQueDieronLike.splice(index, 1);
-          report.likes--;
-      }
-
-      // Agregar o remover dislike
-      const indexDislike = report.listaDeUsuariosQueDieronDislike.indexOf(userId);
-      if (indexDislike === -1) {
-          report.listaDeUsuariosQueDieronDislike.push(userId);
-          report.dislikes++;
-          await report.save();
-          res.status(200).json("Dislike agregado correctamente.");
-      } else {
-          report.listaDeUsuariosQueDieronDislike.splice(indexDislike, 1);
-          report.dislikes--;
-          await report.save();
-          res.status(200).json("Dislike removido correctamente.");
-      }
-  } catch (error) {
-      res.status(500).json({ error: error.message });
-  }
-});
-
-
-//Ruta para obtener todos los reportes incluyendo filtros
+// Ruta para obtener todos los reportes incluyendo filtros
 router.get("/report", (req, res) => {
-  // Parámetros de consulta
   const { sort, linea, direccion, estacion, fechaInicio, fechaFin } = req.query;
 
   // Construir el objeto de consulta basado en los parámetros proporcionados
-  let query = {};
-  if (linea) query.linea = linea;
-  if (direccion) query.direccion = direccion;
-  if (estacion) query.estacion = estacion;
-
-  // Filtrar por rango de fecha y hora si se proporcionan ambos parámetros
+  let matchQuery = {};
+  if (linea) matchQuery.linea = linea;
+  if (direccion) matchQuery.direccion = direccion;
+  if (estacion) matchQuery.estacion = estacion;
   if (fechaInicio && fechaFin) {
-    query.fechaHora = { $gte: new Date(fechaInicio), $lte: new Date(fechaFin) };
+    matchQuery.fechaHora = { $gte: new Date(fechaInicio), $lte: new Date(fechaFin) };
   }
 
   // Inicializar la variable de ordenación
@@ -175,49 +135,74 @@ router.get("/report", (req, res) => {
 
   // Determinar el ordenamiento basado en el parámetro 'sort'
   switch (sort) {
-    case 'masVotados':
-      sortOption = { likes: -1 }; // Orden descendente por 'likes'
+    case 'masLikes':
+      sortOption = { "likes": -1 };
       break;
-    case 'menosVotados':
-      sortOption = { likes: 1 }; // Orden ascendente por 'likes'
+    case 'masDislikes':
+      sortOption = { "dislikes": -1 };
+      break;
+    case 'masInteracciones':
+      // Aquí, 'totalInteracciones' es un campo calculado al vuelo
+      sortOption = { "totalInteracciones": -1 };
       break;
     default:
-      // Si no se especifica, por defecto ordenar por 'fechaHora' descendente
-      sortOption = { fechaHora: -1 };
+      sortOption = { "fechaHora": -1 };
+      break;
   }
 
-  reportSchema
-    .find(query)
-    .select("_id fechaHora linea estacion direccion id_usuario titulo descripcion imagen likes dislikes listaDeUsuariosQueDieronLike listaDeUsuariosQueDieronDislike")
-    .populate('id_usuario', 'nombreCompleto imagenPerfil')
-    .sort(sortOption) // Aplicar la opción de ordenamiento
-    .then((data) => {
-      const reportesTransformados = data.map(reporte => {
-        let imagenBase64 = reporte.imagen ? `data:image/jpeg;base64,${reporte.imagen.toString('base64')}` : null;
-        let imagenPerfilBase64 = reporte.id_usuario.imagenPerfil ? `data:image/jpeg;base64,${reporte.id_usuario.imagenPerfil.toString('base64')}` : null;
+  // Usar la agregación para sumar likes y dislikes
+  reportSchema.aggregate([
+    { $match: matchQuery },
+    {
+      $addFields: {
+        totalInteracciones: { $add: ["$likes", "$dislikes"] } // Campo calculado al vuelo
+      }
+    },
+    { $sort: sortOption },
+    { $limit: 15 }, // Limitar a los últimos 15 documentos
+    {
+      $project: {
+        _id: 1, fechaHora: 1, linea: 1, estacion: 1, direccion: 1,
+        id_usuario: 1, titulo: 1, descripcion: 1, imagen: 1,
+        likes: 1, dislikes: 1, listaDeUsuariosQueDieronLike: 1,
+        listaDeUsuariosQueDieronDislike: 1
+      }
+    },
+    { $lookup: {
+        from: "usuarios", // Asumiendo que la colección de usuarios se llama 'usuarios'
+        localField: "id_usuario",
+        foreignField: "_id",
+        as: "usuario"
+    }},
+    { $unwind: "$usuario" } // Para aplanar el array de usuarios
+  ])
+  .then(data => {
+    const reportesTransformados = data.map(reporte => {
+      let imagenBase64 = reporte.imagen ? `data:image/jpeg;base64,${reporte.imagen.toString('base64')}` : null;
+      let imagenPerfilBase64 = reporte.usuario.imagenPerfil ? `data:image/jpeg;base64,${reporte.usuario.imagenPerfil.toString('base64')}` : null;
 
-        return {
-          id: reporte._id,
-          fechaHora: reporte.fechaHora,
-          linea: reporte.linea,
-          estacion: reporte.estacion,
-          direccion: reporte.direccion,
-          autor: reporte.id_usuario.nombreCompleto,
-          titulo: reporte.titulo,
-          descripcion: reporte.descripcion,
-          imagen: imagenBase64,
-          imagenPerfil: imagenPerfilBase64,
-          likes: reporte.likes,
-          dislikes: reporte.dislikes,
-          usuariosQueDieronLike: reporte.listaDeUsuariosQueDieronLike,
-          usuariosQueDieronDislike: reporte.listaDeUsuariosQueDieronDislike
-        };
-      });
+      return {
+        id: reporte._id,
+        fechaHora: reporte.fechaHora,
+        linea: reporte.linea,
+        estacion: reporte.estacion,
+        direccion: reporte.direccion,
+        autor: reporte.usuario.nombreCompleto,
+        titulo: reporte.titulo,
+        descripcion: reporte.descripcion,
+        imagen: imagenBase64,
+        imagenPerfil: imagenPerfilBase64,
+        likes: reporte.likes,
+        dislikes: reporte.dislikes,
+        usuariosQueDieronLike: reporte.listaDeUsuariosQueDieronLike,
+        usuariosQueDieronDislike: reporte.listaDeUsuariosQueDieronDislike
+      };
+    });
 
-      res.json(reportesTransformados);
-    })
-    .catch((error) => res.json({ message: error }));
-  });
+    res.json(reportesTransformados);
+  })
+  .catch(error => res.status(500).json({ message: error.message }));
+});
   
   //Eliminar reportes con su id
   router.delete('/report/:reportId', async (req, res) => {

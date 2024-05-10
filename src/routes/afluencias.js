@@ -70,7 +70,7 @@ router.post('/', async (req, res) => {
       }
     ]);
 
-    console.log('Resultado de la agregación:', afluencias);
+    //console.log('Resultado de la agregación:', afluencias);
 
     const resultado = afluencias.map(item => ({ estacion: item.estacion, afluencia: item.afluencia, icono: item.icono }));
 
