@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require('multer'); // Multer se usa para manejar form-data, particularmente para la carga de archivos
 const userSchema = require("../models/user");
+const reportSchema = require("../models/report");
 const nodemailer = require('nodemailer');
 
 // Configuración del transportador de nodemailer
@@ -241,12 +242,20 @@ router.put("/users/:id/profile-image", upload.single('imagenPerfil'), (req, res)
 });
 
 //delete a user
-router.delete("/users/:id", (req, res) => {
+router.delete("/users/:id", async (req, res) => {
     const { id } = req.params;
-    userSchema
-        .findByIdAndDelete(id)
-        .then((data)=> res.json("Usuario eliminado de forma correcta"))
-        .catch((error) => res.json({message: error}));
+    try {
+        // Elimina el usuario
+        const user = await userSchema.findByIdAndDelete(id);
+        if (!user) {
+            return res.status(404).json({ message: "Usuario no encontrado" });
+        }
+        // Elimina los reportes relacionados con el usuario
+        await reportSchema.deleteMany({ id_usuario: id });
+        res.json("Usuario eliminado de forma correcta");
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 });
 
 // Ruta para obtener la contraseña por correo electrónico
