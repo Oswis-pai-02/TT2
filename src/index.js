@@ -16,11 +16,14 @@ const app = express();
 const port = process.env.PORT || 9000;
 
 // Configuración de CORS
-const corsOptions = {
-    origin: 'http://localhost:8100', // Permite solicitudes solo desde este origen
-};
+//const corsOptions = {
+    //origin: 'http://localhost:8100', // Permite solicitudes solo desde este origen
+//};
 
-app.use(cors(corsOptions)); // Usa el middleware cors con tus opciones
+//app.use(cors(corsOptions)); // Usa el middleware cors con las opciones
+
+// Configuración de CORS para permitir solicitudes de cualquier origen
+app.use(cors());
 
 //middleware
 app.use(express.json());
