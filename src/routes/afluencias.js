@@ -10,7 +10,7 @@ router.post('/', async (req, res) => {
 
   try {
     // Primero, obtener las afluencias de los últimos 10 minutos
-    let afluencias = await Afluencia.aggregate([
+    let afluenciasRecientes = await Afluencia.aggregate([
       {
         $match: {
           linea: linea,
@@ -60,7 +60,8 @@ router.post('/', async (req, res) => {
           afluencia: {
             $round: ["$afluenciaPromedio", 2]
           },
-          icono: 1
+          icono: 1,
+          timestamp: { $literal: new Date() } // Añadir la fecha y hora actual
         }
       },
       {
@@ -69,10 +70,10 @@ router.post('/', async (req, res) => {
     ]);
 
     // Crear un set de estaciones que ya tienen afluencias recientes
-    const estacionesConAfluenciasRecientes = new Set(afluencias.map(item => item.estacion));
+    const estacionesConAfluenciasRecientes = new Set(afluenciasRecientes.map(item => item.estacion));
 
     // Obtener el último registro existente para estaciones que no tienen afluencias recientes
-    const estacionesSinAfluenciasRecientes = await Afluencia.aggregate([
+    let estacionesSinAfluenciasRecientes = await Afluencia.aggregate([
       {
         $match: {
           linea: linea,
@@ -125,7 +126,8 @@ router.post('/', async (req, res) => {
               2
             ]
           },
-          icono: "$datosAccesibilidad.icon"
+          icono: "$datosAccesibilidad.icon",
+          timestamp: "$ultimoRegistro.timestamp" // Añadir la fecha y hora del último registro
         }
       },
       {
@@ -133,11 +135,33 @@ router.post('/', async (req, res) => {
       }
     ]);
 
-    // Combinar los resultados
-    const resultado = [
-      ...afluencias.map(item => ({ estacion: item.estacion, afluencia: item.afluencia, icono: item.icono })),
-      ...estacionesSinAfluenciasRecientes.map(item => ({ estacion: item.estacion, afluencia: item.afluencia, icono: item.icono }))
-    ];
+    // Crear un objeto para combinar los resultados sin duplicados
+    const resultadoCombinado = {};
+
+    // Agregar afluencias recientes al resultado combinado
+    afluenciasRecientes.forEach(item => {
+      resultadoCombinado[item.estacion] = {
+        estacion: item.estacion,
+        afluencia: item.afluencia,
+        icono: item.icono,
+        timestamp: item.timestamp
+      };
+    });
+
+    // Agregar afluencias no recientes al resultado combinado si no existen en el reciente
+    estacionesSinAfluenciasRecientes.forEach(item => {
+      if (!resultadoCombinado[item.estacion]) {
+        resultadoCombinado[item.estacion] = {
+          estacion: item.estacion,
+          afluencia: item.afluencia,
+          icono: item.icono,
+          timestamp: item.timestamp
+        };
+      }
+    });
+
+    // Convertir el resultado combinado en un array
+    const resultado = Object.values(resultadoCombinado);
 
     res.json(resultado);
   } catch (error) {
