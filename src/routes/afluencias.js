@@ -8,11 +8,9 @@ router.post('/', async (req, res) => {
 
   const diezMinutosAtras = new Date(new Date().getTime() - 10 * 60000);
 
-  //console.log('Recibido - Linea:', linea, 'Direccion:', direccion);
-  //console.log('Tiempo consultado desde:', diezMinutosAtras.toISOString());
-
   try {
-    const afluencias = await Afluencia.aggregate([
+    // Primero, obtener las afluencias de los últimos 10 minutos
+    let afluencias = await Afluencia.aggregate([
       {
         $match: {
           linea: linea,
@@ -33,7 +31,7 @@ router.post('/', async (req, res) => {
       },
       {
         $lookup: {
-          from: 'accesibilidad',  
+          from: 'accesibilidad',
           localField: 'estacion',
           foreignField: 'title',
           as: 'datosAccesibilidad'
@@ -53,7 +51,7 @@ router.post('/', async (req, res) => {
               ]
             }
           },
-          icono: { $first: "$datosAccesibilidad.icon" } // Asume que cada estación tiene un único ícono asociado
+          icono: { $first: "$datosAccesibilidad.icon" }
         }
       },
       {
@@ -70,9 +68,76 @@ router.post('/', async (req, res) => {
       }
     ]);
 
-    //console.log('Resultado de la agregación:', afluencias);
+    // Crear un set de estaciones que ya tienen afluencias recientes
+    const estacionesConAfluenciasRecientes = new Set(afluencias.map(item => item.estacion));
 
-    const resultado = afluencias.map(item => ({ estacion: item.estacion, afluencia: item.afluencia, icono: item.icono }));
+    // Obtener el último registro existente para estaciones que no tienen afluencias recientes
+    const estacionesSinAfluenciasRecientes = await Afluencia.aggregate([
+      {
+        $match: {
+          linea: linea,
+          direccion: direccion,
+          estacion: { $nin: Array.from(estacionesConAfluenciasRecientes) }
+        }
+      },
+      {
+        $sort: { timestamp: -1 }
+      },
+      {
+        $group: {
+          _id: "$estacion",
+          ultimoRegistro: { $first: "$$ROOT" }
+        }
+      },
+      {
+        $lookup: {
+          from: 'estaciones',
+          localField: 'ultimoRegistro.estacion',
+          foreignField: 'estacion',
+          as: 'datosEstacion'
+        }
+      },
+      {
+        $unwind: '$datosEstacion'
+      },
+      {
+        $lookup: {
+          from: 'accesibilidad',
+          localField: 'ultimoRegistro.estacion',
+          foreignField: 'title',
+          as: 'datosAccesibilidad'
+        }
+      },
+      {
+        $unwind: '$datosAccesibilidad'
+      },
+      {
+        $project: {
+          estacion: "$ultimoRegistro.estacion",
+          afluencia: {
+            $round: [
+              {
+                $multiply: [
+                  { $divide: ["$ultimoRegistro.prediccion", '$datosEstacion.capacidad'] },
+                  100
+                ]
+              },
+              2
+            ]
+          },
+          icono: "$datosAccesibilidad.icon"
+        }
+      },
+      {
+        $sort: { estacion: 1 }
+      }
+    ]);
+
+    // Combinar los resultados
+    const resultado = [
+      ...afluencias.map(item => ({ estacion: item.estacion, afluencia: item.afluencia, icono: item.icono })),
+      ...estacionesSinAfluenciasRecientes.map(item => ({ estacion: item.estacion, afluencia: item.afluencia, icono: item.icono }))
+    ];
 
     res.json(resultado);
   } catch (error) {
