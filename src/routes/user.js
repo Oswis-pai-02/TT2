@@ -158,23 +158,22 @@ router.put("/users/update-password", (req, res) => {
 //update a user
 router.put("/users/:id", (req, res) => {
     const { id } = req.params;
-    // Extraee solo nombreCompleto y contrasenia de req.body
     const { nombreCompleto, contrasenia } = req.body;
 
     const encryptedPassword = encrypt(contrasenia);
 
     // Actualiza en la base de datos solo los campos nombreCompleto y contrasenia
     userSchema
-        .updateOne({ _id: id }, { $set: { nombreCompleto, encryptedPassword } })
+        .updateOne({ _id: id }, { $set: { nombreCompleto: nombreCompleto, contrasenia: encryptedPassword } })
         .then(data => {
             // Verifica si se actualizó algún documento
             if (data.modifiedCount > 0) {
-                res.json({ message: "Información actualizada de forma correcta" });
+                res.json("Información actualizada de forma correcta");
             } else {
-                res.json({ message: "No se encontró el usuario o la información es la misma" });
+                res.json("No se encontró el usuario o la información es la misma");
             }
         })
-        .catch(error => res.json({ message: error }));
+        .catch(error => res.json({ message: error.message || error }));
 });
 
 //send code
