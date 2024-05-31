@@ -41,10 +41,10 @@ app.get("/", (req, res) => {
 });
 
 //tweets obtencion
-//fetchTweets().catch(console.error);
+fetchTweets().catch(console.error);
 
 //Para ejecutar fetchTweets en intervalos regulares
-//setInterval(fetchTweets, 1000 * 60 * 15); // Cada 5 minutos
+setInterval(fetchTweets, 1000 * 60 * 15); // Cada 5 minutos
 
 //mongodb connection
 mongoose

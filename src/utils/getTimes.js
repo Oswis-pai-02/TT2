@@ -64,7 +64,7 @@ function procesarImagenConOCR(rutaImagen) {
           console.error('Ocurrió un error:', error);
         }).finally(() => {
           // Opcional: Elimina el archivo de la sección para limpiar
-          fs.unlinkSync(rutaSeccion);
+          //fs.unlinkSync(rutaSeccion);
         });
       })
       .catch(err => console.error('Error al procesar la sección:', err));
