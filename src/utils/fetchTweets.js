@@ -24,7 +24,7 @@ async function fetchTweets() {
         // Selecciona todos los tweets
         const tweetNodes = document.querySelectorAll('article [lang]');
         if (tweetNodes.length > 1) { // Asegura que hay al menos dos tweets
-            const tweetNode = tweetNodes[1]; // Selecciona el segundo tweet
+            const tweetNode = tweetNodes[2]; // Selecciona el segundo tweet
             const tweetText = tweetNode.innerText;
             const imageNodes = tweetNode.closest('article').querySelectorAll('img[src*="twimg"]');
             const tweetImages = Array.from(imageNodes).map(img => img.src);
@@ -41,7 +41,7 @@ async function fetchTweets() {
     if (tweet) {
         await loadTweetsToDB(tweet); // Aquí guardamos el tweet en la base de datos.
 
-        if(tweet.tweetText === 'Conoce el avance de los trenes de la Red y planea tu viaje. Toma previsiones.') {
+        if(tweet.tweetText.includes('Conoce el avance de los trenes')) {
 
             const imageUrl = tweet.tweetImage;
             const baseDirectory = path.resolve(__dirname, '..', '..');
