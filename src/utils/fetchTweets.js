@@ -24,7 +24,7 @@ async function fetchTweets() {
         // Selecciona todos los tweets
         const tweetNodes = document.querySelectorAll('article [lang]');
         if (tweetNodes.length > 1) { // Asegura que hay al menos dos tweets
-            const tweetNode = tweetNodes[2]; // Selecciona el segundo tweet
+            const tweetNode = tweetNodes[0]; // Selecciona el primer tweet
             const tweetText = tweetNode.innerText;
             const imageNodes = tweetNode.closest('article').querySelectorAll('img[src*="twimg"]');
             const tweetImages = Array.from(imageNodes).map(img => img.src);
