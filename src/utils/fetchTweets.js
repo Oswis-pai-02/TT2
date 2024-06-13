@@ -29,14 +29,14 @@ async function fetchTweets() {
             const tweetNodes = document.querySelectorAll('article [lang]');
             for (const tweetNode of tweetNodes) {
                 const tweetText = tweetNode.innerText;
-                if (tweetText.includes('Conoce el avance de los trenes')) {
+                //if (tweetText.includes('Conoce el avance de los trenes')) {
                     const imageNodes = tweetNode.closest('article').querySelectorAll('img[src*="twimg"]');
                     const tweetImages = Array.from(imageNodes).map(img => img.src);
                     const tweetImage = tweetImages[1];
                     const timeElement = tweetNode.closest('article').querySelector('time');
                     const tweetDate = timeElement ? timeElement.getAttribute('datetime') : null;
                     return { tweetText, tweetImage, tweetDate };
-                }
+                //}
             }
             return null;
         });
@@ -57,36 +57,40 @@ async function fetchTweets() {
     if (tweet) {
         await loadTweetsToDB(tweet); // Aquí guardamos el tweet en la base de datos.
 
-        const imageUrl = tweet.tweetImage;
-        const baseDirectory = path.resolve(__dirname, '..', '..');
-        const imageFilePath = path.join(baseDirectory, 'src', 'img', 'avance.png');
+        if (tweet.tweetText.includes('Conoce el avance de los trenes')) {
 
-        const response = await axios({
-            method: 'GET',
-            url: imageUrl,
-            responseType: 'stream'
-        });
+            const imageUrl = tweet.tweetImage;
+            const baseDirectory = path.resolve(__dirname, '..', '..');
+            const imageFilePath = path.join(baseDirectory, 'src', 'img', 'avance.png');
 
-        const writer = fs.createWriteStream(imageFilePath);
-
-        response.data.pipe(writer);
-
-        return new Promise((resolve, reject) => {
-            writer.on('finish', () => {
-                console.log('Imagen descargada y guardada en:', imageFilePath);
-                resolve();
+            const response = await axios({
+                method: 'GET',
+                url: imageUrl,
+                responseType: 'stream'
             });
-            writer.on('error', reject);
-        }).then(() => {
-            procesarImagenConOCR(imageFilePath)
-                .then(resultados => {
-                    console.log('Resultados OCR:', resultados);
-                    addTiempoToDB(resultados);
-                })
-                .catch(error => {
-                    console.error('Error procesando la imagen:', error);
+
+            const writer = fs.createWriteStream(imageFilePath);
+
+            response.data.pipe(writer);
+
+            return new Promise((resolve, reject) => {
+                writer.on('finish', () => {
+                    console.log('Imagen descargada y guardada en:', imageFilePath);
+                    resolve();
                 });
-        });
+                writer.on('error', reject);
+            }).then(() => {
+                procesarImagenConOCR(imageFilePath)
+                    .then(resultados => {
+                        console.log('Resultados OCR:', resultados);
+                        addTiempoToDB(resultados);
+                    })
+                    .catch(error => {
+                        console.error('Error procesando la imagen:', error);
+                    });
+            });
+
+        }
 
     } else {
         console.log('No se encontró ningún tweet con el texto "Conoce el avance de los trenes".');
